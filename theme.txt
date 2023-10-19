@@ -1,0 +1,19 @@
+--Garden Theme--
+Background:
+#46425e
+Foreground:
+#f6c6a8
+Lines:
+#d17c7c
+Font:
+fonts/rainyhearts.ttf
+TitleSize:
+72
+textSize:
+32
+Text Cycle:
+-\|/\|/
+Audio Visualiser(single char):
+:
+Visualiser text Size:
+32
