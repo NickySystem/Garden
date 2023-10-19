@@ -1,4 +1,4 @@
-import pygame, os, sys, time, socket, threading
+import pygame, os, sys, time, socket, threading, asyncio
 from threading import Thread
 from collections import deque
 
@@ -11,10 +11,12 @@ bytesToSend = str.encode(msgFromServer)
 UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 UDPServerSocket.bind((localIP, localPort))
 bytesToSend = str.encode(msgFromServer)
-message = ""
+message = "."
+value_s = 0
+bpm = '120'
 
 #Open Theme from text file ---------------------------------#
-theme = open('theme.txt')
+theme = open('theme.txt', 'r')
 themeContent = theme.read().splitlines()
 themeBg = themeContent[2] #Background
 themeFg = themeContent[4] #Foreground
@@ -22,15 +24,12 @@ themeLn = themeContent[6] #Lines
 themeFnt = themeContent[8] #Font
 themeTtlSize = themeContent[10] #Font1 size
 themeTxtSize = themeContent[12] #Font2 size
-
 themeTxtCycle = themeContent[14] #Text Cycle
 txtCycle = []
 for letter in themeTxtCycle:
     txtCycle.append(letter) #split line into an array of characters
-
-
-
-
+themeAudioViz = themeContent[16] #ASCII char for audioViz
+themeAudioVizSize = themeContent[18] #ASCII char for audioViz
 
 # Initialize pygame ----------------------------------------#
 pygame.init()
@@ -53,23 +52,29 @@ pathContent = filePath.read().splitlines()
 pdFilePath = pathContent[0]
 
 
-
 # Import font ----------------------------------------------#
 font1 = pygame.font.Font(themeFnt, int(themeTxtSize))
 font2 = pygame.font.Font(themeFnt, int(themeTtlSize))
+font3 = pygame.font.Font(themeFnt, int(themeAudioVizSize))
 
 # Get screen info for sizing -------------------------------#
 infoObject = pygame.display.Info() 
 
 # Other Junk------------------------------------------------#
-clock = pygame.time.Clock() # clock usage for fps
 input_box = pygame.Rect(50, infoObject.current_h-100, (infoObject.current_w/2), 50) # beginning box size
 color_inactive = pygame.Color(themeFg) 
 color_active = pygame.Color(themeLn)
 color = color_inactive # box colour
 active = False # is the box in use?
 text = '' # default text
-asciiIndex = 0
+isPlaying = False
+cycleIndex = 0
+
+# Timers----------------------------------------------------#
+clock = pygame.time.Clock()
+currentTime = 0
+checkTime = 60
+timeRand = 0
 
 # Binary arrays---------------------------------------------#
 array1 = [0,0,0,0,0,0,0,0]
@@ -93,14 +98,73 @@ upCmdIndex = 0
 lstComColor = themeLn
 notLstComColor = themeFg
 
+# AudioViz etc.#--------------------------------------------#
+
+audioVizArray = []
+audioVizArray = [0 for i in range(64)]
+audioVizIndex = 0
+audioVizArray = deque(audioVizArray)
+
+# Bass/Synth feedback---------------------------------------#
+bassRiff = [0, 2, 3, 5, 7, 9, 10, 12]
+bassGate = 0
+synthRiff = [0, 2, 3, 5, 7, 9, 10, 12]
+synthGate = 0
+
+# Command Memory--------------------------------------------#
+cmdMemory = ["","","","","",""]
+cmdMemory = deque(cmdMemory)
+cmdIndex = 0
+
 done = False
-
-
 
 # send message to PD
 def send2pd(message = ''):
+    global bassGate, synthGate, bassRiff, synthRiff, bpm
+    global isPlaying
     os.system("echo " + message +"|" + pdFilePath + "pdsend 6000 127.0.0.1 udp")
+    textIn = message
+    if message == "quit" or message == "Quit":
+        pygame.quit()  
+        UDPServerSocket.close()
+        done = True  # Flag that we are done so we exit this loop
+        
+    if message == "start 1":
+        isPlaying = True
+        print (isPlaying)
+        
+    if message == "start 0":
+        isPlaying = False
+        print (isPlaying)
+        
+    if message.startswith('bass bin'):
+        bassGate = textIn[9:]
+        
+    if message.startswith('synth bin'):
+        synthGate = textIn[9:]
     
+    if message.startswith('bass riff'):
+        message1 = message[9:]
+        message1 = message1.replace(" ", "")
+        
+        #message1 = message1.replace(",[]", "")
+        #bassRiff = [int(x) for x in str(message1)]
+        bassRiff = [char for char in message1]
+        bassRiff = [eval(i) for i in bassRiff]
+        
+    if message.startswith('synth riff'):
+        message1 = message[10:]
+        message1 = message1.replace(" ", "")
+        #message1 = message1.replace(",[]", "")
+        #bassRiff = [int(x) for x in str(message1)]
+        synthRiff = [char for char in message1]
+        synthRiff = [eval(i) for i in synthRiff]
+        
+        
+    if message.startswith('bpm'):
+        bpm = message[4:]
+
+        
 #Set user input to be sent to PD
 def sendCommand():
     send2pd(userInput)
@@ -190,22 +254,36 @@ def commandHist():
     screen.blit(hist7,(50, infoObject.current_h-900))
     
 def showUI():
-    closeX = font1.render('X', True, (themeFg))
-    screen.blit(closeX,(infoObject.current_w-50, 50))
+    global isPlaying, txtCycle, cycleIndex
     
     title = font2.render('GARDEN', True, (themeFg))
     screen.blit(title,(50,50))
     
-    bin2DecTitle = font1.render('Bin2Dec', True, (themeFg))
+    bin2DecTitle = font1.render('Bin2Dec', True, (themeLn))
     screen.blit(bin2DecTitle,((infoObject.current_w/2)+50 ,50))
     
-    feedTitle = font1.render('Feedback', True, (themeFg))
+    feedTitle = font1.render('Feedback', True, (themeLn))
     screen.blit(feedTitle,((infoObject.current_w/2)+50 ,infoObject.current_h/2+50))
     
+    bpmText = font1.render('BPM:' + bpm, True, (themeFg))
+    screen.blit(bpmText,((infoObject.current_w/2)+250 ,infoObject.current_h/2+50))
+    
+    
+    
+    bassRiffText = font1.render('Bass Riff: ' + str(bassRiff), True, (themeFg))
+    screen.blit(bassRiffText,((infoObject.current_w/2)+50 ,infoObject.current_h/2+380))
+    bassGateText = font1.render(str(bassGate), True, (themeFg))
+    screen.blit(bassGateText,((infoObject.current_w/2)+192 ,infoObject.current_h/2+430))
+    
+    synthRiffText = font1.render('Synth Riff: ' + str(synthRiff), True, (themeFg))
+    screen.blit(synthRiffText,((infoObject.current_w/2)+500 ,infoObject.current_h/2+380))
+    synthGateText = font1.render(str(synthGate), True, (themeFg))
+    screen.blit(synthGateText,((infoObject.current_w/2)+652 ,infoObject.current_h/2+430))
     
     pygame.draw.line(screen, (themeLn), [infoObject.current_w/2 ,50 ], [infoObject.current_w/2,infoObject.current_h-105], 2)
     pygame.draw.line(screen, (themeLn), [(infoObject.current_w/2)+50 ,infoObject.current_h/2 ], [(infoObject.current_w)-50 ,infoObject.current_h/2 ], 2)
     
+    # Text Box ------------------------------------------#
     txt_surface = font1.render(text, True, themeFg)
     # Resize the box if the text is too long.
     width = max(infoObject.current_w/2 - 100, txt_surface.get_width()+10)
@@ -214,7 +292,6 @@ def showUI():
     screen.blit(txt_surface, (input_box.x+5, input_box.y+5))
     # Blit the input_box rect.
     pygame.draw.rect(screen, color, input_box, 2)
-    
     
 def mouseProcess():
     
@@ -281,34 +358,67 @@ def mouseProcess():
         
 # UDP thread -----------------------------------------------#
 def listenUp():
-    global message
+    global message, value_s
     while True:    
         bytesAddressPair = UDPServerSocket.recvfrom(bufferSize)
+        data, ipaddr = bytesAddressPair
+        data_s = data.decode('ascii')
+        value_s = data_s.strip().rstrip(';')
 
-        message = bytesAddressPair[0]
+        #message = bytesAddressPair[0]
 
         address = bytesAddressPair[1]
-
-        clientMsg = "Message from Client:{}".format(message)
-        clientIP  = "Client IP Address:{}".format(address)
-        
-        print(clientMsg)
-        print(clientIP)
-
-        # Sending a reply to client
         UDPServerSocket.sendto(bytesToSend, address)
-        
-        
 
+# UI thread -----------------------------------------------#
+def uiMove():
+    global txtCycle, cycleIndex, textCycle, isPlaying, themeFg, cycleLength, checkTime
+    cycleLength = len(txtCycle)
+    #currentTime = pygame.time.get_ticks()
+    
+    if isPlaying == True:
+        #print (cycleLength)
+        checkTime -= 1    
+        print(checkTime)
+        textCycle = font1.render(txtCycle[cycleIndex], True, themeFg)
+        screen.blit(textCycle,((infoObject.current_w/2)+450 ,infoObject.current_h/2+50))
+        
+            
+        if cycleIndex > cycleLength:
+                cycleIndex = 0
+                
+        if checkTime <=0:
+            checkTime = 60
+            cycleIndex = (cycleIndex + 1) % cycleLength
+    else:
+        textCycleStopped = font1.render(txtCycle[0], True, themeFg)
+        screen.blit(textCycleStopped,((infoObject.current_w/2)+450 ,infoObject.current_h/2+50))
+        
 def udpIn():
-        global message
-        UDP_in = font1.render(message, True, (themeFg))
-        screen.blit(UDP_in,((infoObject.current_w/2)+50 ,infoObject.current_h/2+150))
-
-
+        global value_s, value_i
+        
+        value_f = float(value_s)
+        value_i = round(value_f)
+        
+        audioVizIndex = 0
+        audioVizArray[audioVizIndex] = value_i
+        audioVizIndex = audioVizIndex +1
+        if audioVizIndex > 4:
+            audioVizIndex = 0
+        audioVizArray.rotate(1)
+        UDP_in = font3.render(themeAudioViz, True, (themeFg))
+        for i in range(64):
+            
+            screen.blit(UDP_in,((infoObject.current_w/2)+50+(i*12) ,(infoObject.current_h/2+225)+audioVizArray[i]))
+        
+    
 threadListen = threading.Thread(target = listenUp, daemon=True)
-threadListen.daemon = True
+threadUi = threading.Thread(target = uiMove, daemon=True)
+
 threadListen.start()
+threadUi.start()
+
+
 
 while not done:
     # This limits the while loop to a max of 60 times per second.
@@ -317,7 +427,7 @@ while not done:
     
     for event in pygame.event.get():  # User did something
         if event.type == pygame.QUIT:  # If user clicked close
-            UDPServerSocket.shotdown()
+            #UDPServerSocket.shutdown(SHUT_RDWR)
             UDPServerSocket.close()
             done = True  # Flag that we are done so we exit this loop
             
@@ -342,12 +452,9 @@ while not done:
             if active:
                 if event.key == pygame.K_RETURN:
                   
-                    userInput = text # take the text from input and store it
-                    
+                    userInput = text # take the text from input and store it                                      
                     text = '' #delete text from textbox
-                    
                     lastCommands.rotate(1) #rotate the array one to the right
-                    
                     lastCommands[0] = userInput #set the first item in array to the text input
                     
                     lstCmdIndex = (lstCmdIndex + 1)%8 # up the index
@@ -356,9 +463,16 @@ while not done:
                     
                 elif event.key == pygame.K_BACKSPACE:
                     text = text[:-1]
+                    
                 else:
                     text += event.unicode
-
+                
+                if event.key == pygame.K_UP:
+                    cmdIndex = cmdIndex + 1
+                    text = lastCommands[lstCmdIndex - cmdIndex]
+                    
+                    if cmdIndex > 7:
+                        cmdIndex = 0
     
     # Clear the screen and set the screen background
     screen.fill((themeBg))
@@ -370,6 +484,8 @@ while not done:
     array2Text()
     array1Addition()
     udpIn()
+    uiMove()
+                        
     pygame.display.flip() # permit section of screen to be refreshed, not all.
         
 # Be IDLE friendly
