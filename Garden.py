@@ -70,6 +70,7 @@ text = '' # default text
 isPlaying = False
 cycleIndex = 0
 
+
 # Timers----------------------------------------------------#
 clock = pygame.time.Clock()
 currentTime = 0
@@ -120,7 +121,7 @@ done = False
 
 # send message to PD
 def send2pd(message = ''):
-    global bassGate, synthGate, bassRiff, synthRiff, bpm
+    global bassGate, synthGate, bassRiff, synthRiff, bpm, themeAudioViz
     global isPlaying
     os.system("echo " + message +"|" + pdFilePath + "pdsend 6000 127.0.0.1 udp")
     textIn = message
@@ -142,6 +143,9 @@ def send2pd(message = ''):
         
     if message.startswith('synth bin'):
         synthGate = textIn[9:]
+        
+    if message.startswith('viz '):
+        themeAudioViz = textIn[4:]
     
     if message.startswith('bass riff'):
         message1 = message[9:]
@@ -320,7 +324,6 @@ def mouseProcess():
     ar27Rect = array2_1.get_rect(topleft = (infoObject.current_w/2 + textDist*8, textY2))
     
     
-    
     if ar10Rect.collidepoint(event.pos):
         array1[0] = (array1[0] + 1) % 2
     if ar11Rect.collidepoint(event.pos):
@@ -355,7 +358,7 @@ def mouseProcess():
     if ar27Rect.collidepoint(event.pos):
         array2[7] = (array2[7] + 1) % 2    
     
-        
+
 # UDP thread -----------------------------------------------#
 def listenUp():
     global message, value_s
@@ -395,7 +398,7 @@ def uiMove():
         screen.blit(textCycleStopped,((infoObject.current_w/2)+450 ,infoObject.current_h/2+50))
         
 def udpIn():
-        global value_s, value_i
+        global value_s, value_i, themeAudioViz
         
         value_f = float(value_s)
         value_i = round(value_f)
@@ -446,8 +449,6 @@ while not done:
                 color = color_active if active else color_inactive
         
         
-            
-        
         if event.type == pygame.KEYDOWN:
             if active:
                 if event.key == pygame.K_RETURN:
@@ -485,6 +486,7 @@ while not done:
     array1Addition()
     udpIn()
     uiMove()
+    
                         
     pygame.display.flip() # permit section of screen to be refreshed, not all.
         
