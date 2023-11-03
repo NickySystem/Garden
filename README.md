@@ -11,7 +11,7 @@ Suggestions welcome.
 
 https://youtu.be/S7y-_tBvyjc?si=ni5EME5QKCuAvRHm
 
-| Instruments | -- | -- |  
+| Instruments |   |   |  
 | Command | Action | Usage |  
 | --- | --- | --- |
 | vol | Amplitude (0 - 1) | kick Vol 1 |  
