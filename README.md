@@ -1,8 +1,6 @@
 # Garden
-Textual command based live music tool for performance
-WWWWWWWWwwwwwwwork in progressszz
 
-##Description
+## Description
 Garden is currently a Python GUI for a Pure Data patch. I will integrate these in the future.
 I am still working on the audio engine as I'm not happy with the live sythesis areas.
 
