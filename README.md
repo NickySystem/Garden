@@ -11,6 +11,7 @@ Suggestions welcome.
 
 https://youtu.be/S7y-_tBvyjc?si=ni5EME5QKCuAvRHm
 
-| foo | bar |
-| --- | --- |
-| baz | bim |
+| Command | Action | Usage |
+| bin | Amplitude (0 - 1) | kick Vol 1 |
+| bin | 8-bit decimal to binary sequencer | kick bin 136 137 |
+
