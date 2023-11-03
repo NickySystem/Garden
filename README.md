@@ -10,3 +10,7 @@ I am working on a set of unified commands fo ease of use and smooth learning cur
 Suggestions welcome.
 
 https://youtu.be/S7y-_tBvyjc?si=ni5EME5QKCuAvRHm
+
+| foo | bar |
+| --- | --- |
+| baz | bim |
