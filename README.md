@@ -13,7 +13,8 @@ https://youtu.be/S7y-_tBvyjc?si=ni5EME5QKCuAvRHm
 
 ## Commands
 ### Instruments
-Kick, Snare, Hhc, Cym, Clap, 
+Kick, Snare, Hhc, Cym, Clap, bass, synth, sampler
+
 | Command | Action | Usage |  
 | --- | --- | --- |
 | vol | Amplitude (0 - 1) | kick Vol 0.8 |  
