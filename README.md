@@ -13,7 +13,7 @@ https://youtu.be/S7y-_tBvyjc?si=ni5EME5QKCuAvRHm
 
 ## Commands
 ### Instruments
-Kick, Snare, Hhc, Cym, Clap, bass, synth, sampler
+Kick, Snare, Hhc, Cym, Clap, Bass, Synth, Sampler
 
 | Command | Action | Usage |  
 | --- | --- | --- |
@@ -22,6 +22,3 @@ Kick, Snare, Hhc, Cym, Clap, bass, synth, sampler
 | mod | sequence length | cym mod 5 |
 | euc | euclidean steps (clap only) | clap euc 5 |
 | all | fill 16 steps (hhc only) | hhc all |  
-
-
-
