@@ -9,7 +9,7 @@ I am working on a set of unified commands fo ease of use and smooth learning cur
 
 Suggestions welcome.
 
-https://youtu.be/S7y-_tBvyjc?si=ni5EME5QKCuAvRHm
+[https://youtu.be/S7y-_tBvyjc?si=ni5EME5QKCuAvRHm](https://www.youtube.com/watch?v=pHAJj6vxO5U)
 
 ## Usage
 Garden is built for performance and projection.  
