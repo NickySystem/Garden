@@ -14,3 +14,7 @@ Suggestions welcome.
 ## Usage
 Garden is built for performance and projection.  
 There is a PDF guide in the repository for the command system.
+
+## Dependencies
+Pure Data https://puredata.info/
+Pygame https://www.pygame.org/
